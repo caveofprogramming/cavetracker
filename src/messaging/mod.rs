@@ -1,31 +1,50 @@
 use crate::model::Song;
 use crossbeam::channel::{Receiver, Sender, bounded, unbounded};
+use serial_test::serial;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use crate::types::{ChainId, NoteId, PatternId, PhraseId, TrackId};
+use crate::types::{ChainId, NoteId, PatternId, PhraseId, Step, TrackId};
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    struct TestEnv {
+        tx: Sender<EditAction>,
+        rx: Receiver<EditAction>,
+    }
+
+    impl TestEnv {
+        fn new() -> Self {
+            let song = Arc::new(Mutex::new(Song::new()));
+            let (tx, rx): (Sender<EditAction>, Receiver<EditAction>) = unbounded();
+            let update_engine = UpdateEngine::new(rx.clone(), song.clone());
+            update_engine.run();
+
+            Self {
+                tx: tx.clone(),
+                rx: rx.clone(),
+            }
+        }
+    }
+
     #[test]
+    #[serial]
     fn get_pattern_data() {
-        let song = Arc::new(Mutex::new(Song::new()));
+        let env = TestEnv::new();
+
+        let tx = env.tx.clone();
 
         let pattern_id = 10;
         let chain_id = 15;
         let track_id = 5;
 
-        let pattern = {
-            let mut guard = song.lock().expect("Failed to lock song");
-            guard.update_pattern(pattern_id, track_id, Some(chain_id));
-        };
-
-        let (tx, rx): (Sender<EditAction>, Receiver<EditAction>) = unbounded();
-
-        let update_engine = UpdateEngine::new(rx.clone(), song.clone());
-        update_engine.run();
+        let _ = tx.send(EditAction::SetPatternValue {
+            pattern_id,
+            track_id,
+            chain_id: Some(chain_id),
+        });
 
         let (reply_tx, reply_rx) = bounded(1);
 
@@ -34,15 +53,33 @@ mod tests {
 
         let pattern_data = reply_rx.recv().unwrap();
 
-        let pattern = {
-            let guard = song.lock().expect("Failed to lock song");
-            guard.get_pattern(pattern_id);
-        };
+        assert!(pattern_data.len() > pattern_id as usize);
+        assert_eq!(
+            pattern_data[pattern_id as usize][track_id as usize],
+            Some(chain_id)
+        );
+    }
 
-        assert!(pattern_data.len() > pattern_id as usize); 
-        assert_eq!(pattern_data[pattern_id as usize][track_id as usize], Some(chain_id));
+    #[test]
+    #[serial]
+    fn get_chain_data() {
+        let env = TestEnv::new();
 
-        drop(tx); // close channel
+        let tx = env.tx.clone();
+
+        let chain_id = 15;
+        let phrases = vec![1, 2, 3, 4];
+
+        let _ = tx.send(EditAction::SetChainData { chain_id, phrases: phrases.clone() });
+
+        let (reply_tx, reply_rx) = bounded(1);
+
+        tx.send(EditAction::GetChainData { chain_id, reply_to: reply_tx })
+            .unwrap();
+
+        let result = reply_rx.recv().unwrap();
+
+        assert!(phrases == result);
     }
 }
 
@@ -54,32 +91,28 @@ pub enum EditAction {
         reply_to: Sender<Vec<Vec<Option<ChainId>>>>,
     },
 
+    /*
+     * Set the chain ID of a particular pattern
+     * for a particular track.
+     */
+    SetPatternValue {
+        pattern_id: PatternId,
+        track_id: TrackId,
+        chain_id: Option<ChainId>,
+    },
+
+    /*
+     * Get the list of phrases that
+     * compose a particular chain.
+     */
     GetChainData {
         chain_id: ChainId,
-        reply_to: Sender<Vec<Option<PhraseId>>>,
+        reply_to: Sender<Vec<PhraseId>>,
     },
 
-    GetPhraseData {
-        phrase_id: PhraseId,
-        reply_to: Sender<Vec<Option<NoteId>>>,
-    },
-
-    SetPatternValue {
-        pattern: PatternId,
-        track: TrackId,
-        chain: Option<ChainId>,
-    },
-
-    SetChainValue {
-        chain: ChainId,
-        index: u8,
-        phrase: Option<PhraseId>,
-    },
-
-    SetPhraseValue {
-        phrase: PhraseId,
-        index: u8,
-        note: Option<NoteId>,
+    SetChainData {
+        chain_id: ChainId,
+        phrases: Vec<PhraseId>,
     },
 }
 
@@ -109,50 +142,23 @@ impl UpdateEngine {
                         }
                     }
                     EditAction::SetPatternValue {
-                        pattern,
-                        track,
-                        chain,
+                        pattern_id,
+                        track_id,
+                        chain_id,
                     } => {
                         if let Ok(mut song_guard) = song.lock() {
-                            song_guard.update_pattern(pattern, track, chain);
-                        }
-                    }
-                    EditAction::SetChainValue {
-                        chain,
-                        index,
-                        phrase,
-                    } => {
-                        if let Ok(mut song_guard) = song.lock() {
-                            //song_guard.update_chain(chain, index, phrase);
-                        }
-                    }
-                    EditAction::SetPhraseValue {
-                        phrase,
-                        index,
-                        note,
-                    } => {
-                        if let Ok(song_guard) = song.lock() {
-                            //song_guard.update_phrase(phrase, index, note);
+                            song_guard.update_pattern(pattern_id, track_id, chain_id);
                         }
                     }
                     EditAction::GetChainData { chain_id, reply_to } => {
-                        /*
                         if let Ok(mut song_guard) = song.lock() {
                             let chain_data = song_guard.get_chain_data(chain_id);
                             let _ = reply_to.send(chain_data);
                         }
-                        */
                     }
-                    EditAction::GetPhraseData {
-                        phrase_id,
-                        reply_to,
-                    } => {
-                        if let Ok(song_guard) = song.lock() {
-                            /*
-                            let phrase_data = song_guard.get_phrase_data(phrase_id);
-                            let reply: Vec<_> = phrase_data.iter().map(|s| s.note).collect();
-                            let _ = reply_to.send(reply);
-                            */
+                    EditAction::SetChainData { chain_id, phrases } => {
+                        if let Ok(mut song_guard) = song.lock() {
+                            song_guard.set_chain_data(chain_id, phrases);
                         }
                     }
                 }

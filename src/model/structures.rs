@@ -1,4 +1,4 @@
-use crate::types::{ChainId, NUM_TRACKS, PatternId, PhraseId, TrackId};
+use crate::types::{ChainId, NUM_TRACKS, PatternId, PhraseId, Step, TrackId};
 use std::collections::HashMap;
 
 /*
@@ -30,15 +30,6 @@ pub struct Phrase {
 }
 
 /*
- * Each step represents a note
- * or command.
- */
-pub struct Step {
-    note: u8,
-    len: u8,
-}
-
-/*
  * Song stores all necessary
  * patterns, chains and phrases.
  * The number of patterns is flexible.
@@ -59,6 +50,7 @@ impl Song {
         }
     }
 
+    // Get data for all patterns.
     pub fn get_pattern_data(&self) -> Vec<Vec<Option<ChainId>>> {
         self.patterns
             .iter()
@@ -66,6 +58,7 @@ impl Song {
             .collect()
     }
 
+    // Get data for an individual pattern
     pub fn get_pattern(&self, pattern_id: PatternId) -> Vec<Option<ChainId>> {
         let index = pattern_id as usize;
         self.patterns
@@ -97,5 +90,18 @@ impl Song {
             "Updated pattern {} track {} with chain {:?}",
             pattern_id, track_id, chain_id
         );
+    }
+
+    // Get data for a particular chain
+    pub fn get_chain_data(&self, chain_id: ChainId) -> Vec<PhraseId> {
+        self.chains
+            .get(&chain_id)
+            .map(|chain| chain.phrases.iter().cloned().collect())
+            .unwrap_or_else(Vec::new)
+    }
+
+    // Update a chain or add a new chain
+    pub fn set_chain_data(&mut self, chain_id: ChainId, phrases: Vec<PhraseId>) {
+        self.chains.insert(chain_id, Chain { phrases });
     }
 }
