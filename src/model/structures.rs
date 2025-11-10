@@ -20,6 +20,14 @@ pub struct Chain {
     phrases: Vec<PhraseId>,
 }
 
+impl Chain {
+    pub fn new() -> Self {
+        Self {
+            phrases: Vec::new(),
+        }
+    }
+}
+
 /*
  * A phrase contains 16 steps, which might
  * represent a bar, 4 bars, a quarter bar, etc.
@@ -39,6 +47,12 @@ pub struct Song {
     patterns: Vec<Pattern>,
     pub chains: HashMap<ChainId, Chain>,
     pub phrases: HashMap<PhraseId, Phrase>,
+}
+
+impl Phrase {
+    fn new() -> Self {
+        Self { steps: [None; 16] }
+    }
 }
 
 impl Song {
@@ -100,8 +114,40 @@ impl Song {
             .unwrap_or_else(Vec::new)
     }
 
-    // Update a chain or add a new chain
-    pub fn set_chain_data(&mut self, chain_id: ChainId, phrases: Vec<PhraseId>) {
-        self.chains.insert(chain_id, Chain { phrases });
+    // Set a phrase in a chain
+    pub fn set_chain_phrase(&mut self, chain_id: ChainId, index: usize, phrase_id: PhraseId) {
+        let chain = self.chains.entry(chain_id).or_insert_with(|| Chain::new());
+
+        if index > chain.phrases.len() {
+            panic!("Chain index out of bounds.");
+        }
+
+        if index == chain.phrases.len() {
+            chain.phrases.push(phrase_id);
+        } else {
+            chain.phrases[index] = phrase_id;
+        }
+    }
+
+    // Get data for a particular phrase
+    pub fn get_phrase_data(&self, phrase_id: PhraseId) -> Vec<Option<Step>> {
+        self.phrases
+            .get(&phrase_id)
+            .map(|phrase| phrase.steps.iter().cloned().collect())
+            .unwrap_or_else(Vec::new)
+    }
+
+    // Update a phrase or add a new phrase
+    pub fn set_phrase_step(&mut self, phrase_id: PhraseId, index: usize, step: Option<Step>) {
+        let phrase = self
+            .phrases
+            .entry(phrase_id)
+            .or_insert_with(|| Phrase::new());
+
+        if index >= 16 {
+            panic!("Phrase step index out of bounds: index = {index}, phrase has 16 steps");
+        }
+
+        phrase.steps[index] = step;
     }
 }

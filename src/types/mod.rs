@@ -10,6 +10,8 @@ pub const NUM_TRACKS: usize = 8;
  * Each step represents a note
  * or command.
  */
+
+#[derive(Clone, Copy)]
 pub struct Step {
     note: u8,
     len: u8,

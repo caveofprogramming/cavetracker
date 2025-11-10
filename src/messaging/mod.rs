@@ -29,9 +29,14 @@ mod tests {
         }
     }
 
+    /*
+     * Test setting a pattern chain_id, then retrieving all
+     * patterns and checking the value has been set.
+     */
+
     #[test]
     #[serial]
-    fn get_pattern_data() {
+    fn pattern_data() {
         let env = TestEnv::new();
 
         let tx = env.tx.clone();
@@ -60,6 +65,11 @@ mod tests {
         );
     }
 
+    /*
+     * Test setting phrase IDs in a chain, then retrieving all
+     * chains and check the phrase IDs have been set.
+     */
+
     #[test]
     #[serial]
     fn get_chain_data() {
@@ -68,18 +78,35 @@ mod tests {
         let tx = env.tx.clone();
 
         let chain_id = 15;
-        let phrases = vec![1, 2, 3, 4];
+        let phrase_id1 = 10;
+        let index1 = 0;
+        let phrase_id2 = 15;
+        let index2 = 1;
 
-        let _ = tx.send(EditAction::SetChainData { chain_id, phrases: phrases.clone() });
+        let _ = tx.send(EditAction::SetChainPhrase {
+            chain_id,
+            index: index1,
+            phrase_id: phrase_id1,
+        });
+
+        let _ = tx.send(EditAction::SetChainPhrase {
+            chain_id,
+            index: index2,
+            phrase_id: phrase_id2,
+        });
 
         let (reply_tx, reply_rx) = bounded(1);
 
-        tx.send(EditAction::GetChainData { chain_id, reply_to: reply_tx })
-            .unwrap();
+        tx.send(EditAction::GetChainData {
+            chain_id,
+            reply_to: reply_tx,
+        })
+        .unwrap();
 
-        let result = reply_rx.recv().unwrap();
+        let chain = reply_rx.recv().unwrap();
 
-        assert!(phrases == result);
+        assert!(chain[index1] == phrase_id1);
+        assert!(chain[index2] == phrase_id2);
     }
 }
 
@@ -110,9 +137,10 @@ pub enum EditAction {
         reply_to: Sender<Vec<PhraseId>>,
     },
 
-    SetChainData {
+    SetChainPhrase {
         chain_id: ChainId,
-        phrases: Vec<PhraseId>,
+        index: usize,
+        phrase_id: PhraseId,
     },
 }
 
@@ -156,9 +184,13 @@ impl UpdateEngine {
                             let _ = reply_to.send(chain_data);
                         }
                     }
-                    EditAction::SetChainData { chain_id, phrases } => {
+                    EditAction::SetChainPhrase {
+                        chain_id,
+                        index,
+                        phrase_id,
+                    } => {
                         if let Ok(mut song_guard) = song.lock() {
-                            song_guard.set_chain_data(chain_id, phrases);
+                            song_guard.set_chain_phrase(chain_id, index, phrase_id);
                         }
                     }
                 }
