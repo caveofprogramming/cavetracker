@@ -1,14 +1,14 @@
 use crate::model::Song;
 use crossbeam::channel::{Receiver, Sender, bounded, unbounded};
-use serial_test::serial;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use crate::types::{ChainId, NoteId, PatternId, PhraseId, Step, TrackId};
+use crate::types::{Note, ChainId, NoteId, PatternId, PhraseId, Step, TrackId};
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
 
     struct TestEnv {
         tx: Sender<EditAction>,
@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     #[serial]
-    fn get_chain_data() {
+    fn chain_data() {
         let env = TestEnv::new();
 
         let tx = env.tx.clone();
@@ -108,6 +108,57 @@ mod tests {
         assert!(chain[index1] == phrase_id1);
         assert!(chain[index2] == phrase_id2);
     }
+
+    /*
+     * Test setting steps in a phrase, then retrieving all
+     * steps and check the steps have been set.
+     */
+
+    #[test]
+    #[serial]
+    fn phrase_data() {
+        let env = TestEnv::new();
+
+        let tx = env.tx.clone();
+
+        let phrase_ids = vec![0, 0, 5, 10];
+        let indices = vec![0, 3, 15, 2];
+        let steps = vec![
+            Some(Step::new(4, 8)),
+            Some(Step::new(2, 1)),
+            Some(Step::new(0, 4)),
+            None,
+        ];
+
+        for i in 0..phrase_ids.len() {
+            let phrase_id = phrase_ids[i];
+            let index = indices[i];
+            let step = steps[i];
+
+            let _ = tx.send(EditAction::SetPhraseStep {
+                phrase_id,
+                index: index,
+                step,
+            });
+        }
+
+        for i in 0..phrase_ids.len() {
+            let phrase_id = phrase_ids[i];
+            let index = indices[i];
+            let step = steps[i];
+
+            let (reply_tx, reply_rx) = bounded(1);
+
+            let _ = tx.send(EditAction::GetPhraseData {
+                phrase_id,
+                reply_to: reply_tx,
+            });
+
+            let phrase = reply_rx.recv().unwrap();
+
+            assert!(phrase[index] == step);
+        }
+    }
 }
 
 pub enum EditAction {
@@ -141,6 +192,17 @@ pub enum EditAction {
         chain_id: ChainId,
         index: usize,
         phrase_id: PhraseId,
+    },
+
+    GetPhraseData {
+        phrase_id: PhraseId,
+        reply_to: Sender<Vec<Option<Step>>>,
+    },
+
+    SetPhraseStep {
+        phrase_id: PhraseId,
+        index: usize,
+        step: Option<Step>,
     },
 }
 
@@ -191,6 +253,24 @@ impl UpdateEngine {
                     } => {
                         if let Ok(mut song_guard) = song.lock() {
                             song_guard.set_chain_phrase(chain_id, index, phrase_id);
+                        }
+                    }
+                    EditAction::GetPhraseData {
+                        phrase_id,
+                        reply_to,
+                    } => {
+                        if let Ok(mut song_guard) = song.lock() {
+                            let phrase_data = song_guard.get_phrase_data(phrase_id);
+                            let _ = reply_to.send(phrase_data);
+                        }
+                    }
+                    EditAction::SetPhraseStep {
+                        phrase_id,
+                        index,
+                        step,
+                    } => {
+                        if let Ok(mut song_guard) = song.lock() {
+                            song_guard.set_phrase_step(phrase_id, index, step);
                         }
                     }
                 }
