@@ -1,9 +1,9 @@
 use crate::model::Song;
-use crossbeam::channel::{Receiver, Sender, bounded, unbounded};
+use crossbeam::channel::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use crate::types::{Note, ChainId, NoteId, PatternId, PhraseId, Step, TrackId};
+use crate::types::{ChainId, PatternId, PhraseId, Step, TrackId};
 
 #[cfg(test)]
 mod tests {
@@ -226,7 +226,7 @@ impl UpdateEngine {
                     EditAction::GetPatternData { reply_to } => {
                         println!("Get pattern data");
 
-                        if let Ok(mut song_guard) = song.lock() {
+                        if let Ok(song_guard) = song.lock() {
                             let pattern_data = song_guard.get_pattern_data();
                             let _ = reply_to.send(pattern_data);
                         }
@@ -241,7 +241,7 @@ impl UpdateEngine {
                         }
                     }
                     EditAction::GetChainData { chain_id, reply_to } => {
-                        if let Ok(mut song_guard) = song.lock() {
+                        if let Ok(song_guard) = song.lock() {
                             let chain_data = song_guard.get_chain_data(chain_id);
                             let _ = reply_to.send(chain_data);
                         }
@@ -259,7 +259,7 @@ impl UpdateEngine {
                         phrase_id,
                         reply_to,
                     } => {
-                        if let Ok(mut song_guard) = song.lock() {
+                        if let Ok(song_guard) = song.lock() {
                             let phrase_data = song_guard.get_phrase_data(phrase_id);
                             let _ = reply_to.send(phrase_data);
                         }

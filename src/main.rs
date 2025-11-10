@@ -1,3 +1,6 @@
+use cavetracker::Runner;
+
 fn main() {
-    println!("Hello, world!");
+    let runner = Runner::new();
+    runner.start();
 }

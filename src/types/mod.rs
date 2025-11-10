@@ -18,7 +18,6 @@ pub struct Step {
     len: u8,
 }
 
-
 impl Step {
     pub fn new(note: Note, len: u8) -> Self {
         Self { note, len }
