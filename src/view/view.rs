@@ -5,4 +5,3 @@ pub trait View {
     fn draw(&mut self, ui: &mut Ui);
     fn get_selection(&self) -> Option<u8>;
 }
-

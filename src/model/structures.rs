@@ -1,4 +1,7 @@
-use crate::types::{ChainId, NUM_TRACKS, PatternId, PhraseId, Step, TrackId};
+use crate::types::{
+    ChainId, NUM_CHAINS_PER_PATTERN, NUM_PHRASES_PER_CHAIN, NUM_STEPS_PER_PHRASE, NUM_TRACKS,
+    PatternId, PhraseId, Step, TrackId,
+};
 use std::collections::HashMap;
 
 /*
@@ -8,7 +11,7 @@ use std::collections::HashMap;
  */
 
 pub struct Pattern {
-    tracks: [Option<ChainId>; 8],
+    tracks: [Option<ChainId>; NUM_CHAINS_PER_PATTERN],
 }
 
 /*
@@ -17,13 +20,13 @@ pub struct Pattern {
  */
 
 pub struct Chain {
-    phrases: Vec<PhraseId>,
+    phrases: [Option<PhraseId>; NUM_PHRASES_PER_CHAIN],
 }
 
 impl Chain {
     pub fn new() -> Self {
         Self {
-            phrases: Vec::new(),
+            phrases: [None; NUM_PHRASES_PER_CHAIN],
         }
     }
 }
@@ -34,7 +37,7 @@ impl Chain {
  */
 
 pub struct Phrase {
-    steps: [Option<Step>; 16],
+    steps: [Option<Step>; NUM_STEPS_PER_PHRASE],
 }
 
 /*
@@ -51,7 +54,9 @@ pub struct Song {
 
 impl Phrase {
     fn new() -> Self {
-        Self { steps: [None; 16] }
+        Self {
+            steps: [None; NUM_STEPS_PER_PHRASE],
+        }
     }
 }
 
@@ -107,7 +112,7 @@ impl Song {
     }
 
     // Get data for a particular chain
-    pub fn get_chain_data(&self, chain_id: ChainId) -> Vec<PhraseId> {
+    pub fn get_chain_data(&self, chain_id: ChainId) -> Vec<Option<PhraseId>> {
         self.chains
             .get(&chain_id)
             .map(|chain| chain.phrases.iter().cloned().collect())
@@ -115,18 +120,21 @@ impl Song {
     }
 
     // Set a phrase in a chain
-    pub fn set_chain_phrase(&mut self, chain_id: ChainId, index: usize, phrase_id: PhraseId) {
+    pub fn set_chain_phrase(
+        &mut self,
+        chain_id: ChainId,
+        index: usize,
+        phrase_id: Option<PhraseId>,
+    ) {
         let chain = self.chains.entry(chain_id).or_insert_with(|| Chain::new());
 
-        if index > chain.phrases.len() {
-            panic!("Chain index out of bounds.");
+        if index >= NUM_PHRASES_PER_CHAIN {
+            panic!(
+                "Phrase phrase index out of bounds: index = {index}, chain has {NUM_PHRASES_PER_CHAIN} steps"
+            );
         }
 
-        if index == chain.phrases.len() {
-            chain.phrases.push(phrase_id);
-        } else {
-            chain.phrases[index] = phrase_id;
-        }
+        chain.phrases[index] = phrase_id;
     }
 
     // Get data for a particular phrase
@@ -144,8 +152,10 @@ impl Song {
             .entry(phrase_id)
             .or_insert_with(|| Phrase::new());
 
-        if index >= 16 {
-            panic!("Phrase step index out of bounds: index = {index}, phrase has 16 steps");
+        if index >= NUM_STEPS_PER_PHRASE {
+            panic!(
+                "Phrase step index out of bounds: index = {index}, phrase has {NUM_STEPS_PER_PHRASE} steps"
+            );
         }
 
         phrase.steps[index] = step;

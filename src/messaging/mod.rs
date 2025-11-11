@@ -7,6 +7,9 @@ use crate::types::{ChainId, PatternId, PhraseId, Step, TrackId};
 
 #[cfg(test)]
 mod tests {
+
+    use crossbeam::channel::{bounded, unbounded};
+
     use super::*;
     use serial_test::serial;
 
@@ -77,36 +80,33 @@ mod tests {
 
         let tx = env.tx.clone();
 
-        let chain_id = 15;
-        let phrase_id1 = 10;
-        let index1 = 0;
-        let phrase_id2 = 15;
-        let index2 = 1;
+        let chain_ids = vec![0, 15, 1];
+        let phrase_ids = vec![Some(0), Some(15), None];
+        let indices = [0, 1, 3];
 
-        let _ = tx.send(EditAction::SetChainPhrase {
-            chain_id,
-            index: index1,
-            phrase_id: phrase_id1,
-        });
+        for i in 0..indices.len() {
+            let chain_id = chain_ids[i];
+            let phrase_id = phrase_ids[i];
+            let index = indices[i];
 
-        let _ = tx.send(EditAction::SetChainPhrase {
-            chain_id,
-            index: index2,
-            phrase_id: phrase_id2,
-        });
+            let _ = tx.send(EditAction::SetChainPhrase {
+                chain_id,
+                index: index,
+                phrase_id: phrase_id,
+            });
 
-        let (reply_tx, reply_rx) = bounded(1);
+            let (reply_tx, reply_rx) = bounded(1);
 
-        tx.send(EditAction::GetChainData {
-            chain_id,
-            reply_to: reply_tx,
-        })
-        .unwrap();
+            tx.send(EditAction::GetChainData {
+                chain_id,
+                reply_to: reply_tx,
+            })
+            .unwrap();
 
-        let chain = reply_rx.recv().unwrap();
+            let chain = reply_rx.recv().unwrap();
 
-        assert!(chain[index1] == phrase_id1);
-        assert!(chain[index2] == phrase_id2);
+            assert!(chain[index] == phrase_id);
+        }
     }
 
     /*
@@ -130,7 +130,7 @@ mod tests {
             None,
         ];
 
-        for i in 0..phrase_ids.len() {
+        for i in 0..steps.len() {
             let phrase_id = phrase_ids[i];
             let index = indices[i];
             let step = steps[i];
@@ -142,7 +142,7 @@ mod tests {
             });
         }
 
-        for i in 0..phrase_ids.len() {
+        for i in 0..steps.len() {
             let phrase_id = phrase_ids[i];
             let index = indices[i];
             let step = steps[i];
@@ -185,13 +185,13 @@ pub enum EditAction {
      */
     GetChainData {
         chain_id: ChainId,
-        reply_to: Sender<Vec<PhraseId>>,
+        reply_to: Sender<Vec<Option<PhraseId>>>,
     },
 
     SetChainPhrase {
         chain_id: ChainId,
         index: usize,
-        phrase_id: PhraseId,
+        phrase_id: Option<PhraseId>,
     },
 
     GetPhraseData {

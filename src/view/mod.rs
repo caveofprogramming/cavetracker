@@ -1,7 +1,9 @@
 mod app;
-mod view;
+mod chain;
 mod song;
+mod view;
 
 pub use app::UiApp;
-pub use view::View;
+pub use chain::Chain;
 pub use song::Song;
+pub use view::View;

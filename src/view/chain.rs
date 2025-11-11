@@ -2,27 +2,26 @@ use eframe::egui::{Color32, InputState, Key, RichText, Ui};
 
 use super::view::View;
 use crate::messaging::EditAction;
-use crate::types::ChainId;
+use crate::types::{ChainId, PhraseId};
 use crossbeam::channel::Sender;
+use crossbeam::channel::bounded;
 use std::borrow::Cow;
 
-const ROWS: usize = 256;
-const COLS: usize = 8;
+const ROWS: usize = 16;
 
-pub struct Song {
+pub struct Chain {
     tx: Sender<EditAction>,
-    visible_rows: usize,
+
+    chain_id: ChainId,
 
     // Selection state
     selected_row: usize,
-    selected_col: usize,
-    min_row: usize,
 
     // Data
-    values: Vec<Vec<Option<ChainId>>>,
+    values: Vec<Option<PhraseId>>,
 }
 
-impl View for Song {
+impl View for Chain {
     fn handle_event(&mut self, input: &InputState) {
         let shift_down = input.modifiers.shift;
 
@@ -34,92 +33,81 @@ impl View for Song {
     }
 
     fn get_selection(&self) -> Option<u8> {
-        self.values[self.selected_row][self.selected_col]
+        self.values[self.selected_row]
     }
 
     fn draw(&mut self, ui: &mut Ui) {
-        let max_row = (self.min_row + self.visible_rows).min(ROWS);
-
         ui.vertical_centered(|ui| {
-            ui.label(RichText::new("SONG").heading().color(Color32::LIGHT_BLUE));
+            ui.label(RichText::new("CHAIN").heading().color(Color32::LIGHT_BLUE));
         });
         ui.add_space(20.0);
 
         // Grid for table layout
-        egui::Grid::new("song_grid")
-            .num_columns(2 + COLS) // ">" column + row label + COLS data columns
-            .min_col_width(40.0) // Allow exact column widths
+        egui::Grid::new("chain_grid")
+            .num_columns(3)
+            .min_col_width(40.0)
             .max_col_width(f32::INFINITY)
             .show(ui, |ui| {
                 // Header row
                 ui.label(""); // Empty ">" column
                 ui.label(""); // Empty row label column
-                for track in 0..COLS {
-                    ui.label(
-                        RichText::new(format!("{}", track))
-                            .strong()
-                            .size(12.0) // Fit within row height
-                            .color(Color32::LIGHT_BLUE),
-                    );
-                }
+                ui.label(format!("{:0x}", self.chain_id));
                 ui.end_row();
 
                 // Body rows
-                for i in self.min_row..max_row {
+                for i in 0..16 {
                     ui.label(RichText::new(" ").color(Color32::YELLOW));
                     ui.label(RichText::new(format!("{:02X}", i)).color(Color32::GREEN));
-                    for j in 0..COLS {
-                        let cell = self.render_cell(self.values[i][j]);
-                        let is_selected = i == self.selected_row && j == self.selected_col;
-                        let text = RichText::new(cell).size(12.0); // Consistent font size
-                        if is_selected {
-                            ui.label(text.color(Color32::BLACK).background_color(Color32::YELLOW));
-                        } else {
-                            ui.label(text.color(Color32::WHITE));
-                        }
+
+                    let cell = if self.values.len() < i {
+                        self.render_cell(None)
+                    } else {
+                        self.render_cell(self.values[i])
+                    };
+
+                    let is_selected = i == self.selected_row;
+                    let text = RichText::new(cell).size(12.0);
+                    if is_selected {
+                        ui.label(text.color(Color32::BLACK).background_color(Color32::YELLOW));
+                    } else {
+                        ui.label(text.color(Color32::WHITE));
                     }
+
                     ui.end_row();
                 }
             });
     }
 }
 
-impl Song {
+impl Chain {
     const MAX_CELL_VALUE: usize = 0xFF;
     const BIG_CELL_INCREMENT: isize = 0x10;
     const EMPTY_CELL_DISPLAY: &str = "--";
 
-    pub fn new(tx: Sender<EditAction>) -> Self {
+    pub fn new(tx: Sender<EditAction>, chain_id: ChainId) -> Self {
+        let (reply_tx, reply_rx) = bounded(1); // one-shot channel
+        tx.send(EditAction::GetChainData {
+            chain_id,
+            reply_to: reply_tx,
+        })
+        .unwrap();
+
+        let chain_data = reply_rx.recv().unwrap(); // blocks until response
+
         Self {
             tx,
-            values: vec![vec![None; COLS]; ROWS],
+            chain_id,
+            values: chain_data,
             selected_row: 0,
-            selected_col: 0,
-            visible_rows: 16,
-            min_row: 0,
         }
     }
 
     fn move_selection(&mut self, input: &InputState) {
         if input.key_pressed(Key::ArrowDown) {
             self.selected_row = (self.selected_row + 1).min(ROWS - 1);
-
-            if self.selected_row >= self.min_row + self.visible_rows {
-                self.min_row = (self.min_row + 1).min(ROWS.saturating_sub(self.visible_rows));
-            }
         }
         if input.key_pressed(Key::ArrowUp) {
             self.selected_row = self.selected_row.saturating_sub(1);
-
-            if self.selected_row < self.min_row {
-                self.min_row = self.min_row.saturating_sub(1);
-            }
-        }
-        if input.key_pressed(Key::ArrowRight) {
-            self.selected_col = (self.selected_col + 1).min(COLS - 1);
-        }
-        if input.key_pressed(Key::ArrowLeft) {
-            self.selected_col = self.selected_col.saturating_sub(1);
         }
     }
 
@@ -168,17 +156,16 @@ impl Song {
         let Some(d) = delta else { return };
 
         let row = self.selected_row;
-        let col = self.selected_col;
-        let cell = &mut self.values[row][col];
+        let cell = &mut self.values[row];
 
         let new_value = Self::apply_delta(*cell, d);
         *cell = new_value;
 
         self.tx
-            .send(EditAction::SetPatternValue {
-                pattern_id: row as u8,
-                track_id: col as u8,
-                chain_id: new_value,
+            .send(EditAction::SetChainPhrase {
+                chain_id: self.chain_id,
+                index: row as usize,
+                phrase_id: new_value,
             })
             .unwrap();
     }

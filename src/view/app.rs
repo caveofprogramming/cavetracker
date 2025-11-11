@@ -71,10 +71,9 @@ impl UiApp {
 
             match self.mode {
                 ViewMode::Song => {
-                    if let Some(chain_id) = selected_value {
+                    if let Some(_chain_id) = selected_value {
                         self.mode = ViewMode::Chain;
-                        self.view =
-                            Rc::new(RefCell::new(Song::new(self.tx.clone())));
+                        self.view = Rc::new(RefCell::new(Song::new(self.tx.clone())));
                     }
                 }
                 ViewMode::Chain => {

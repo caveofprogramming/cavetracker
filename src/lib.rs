@@ -4,10 +4,10 @@ pub mod types;
 pub mod view;
 
 use crate::messaging::EditAction;
+use crate::view::UiApp;
+use crossbeam::channel::{Receiver, Sender, unbounded};
 use eframe::{NativeOptions, egui};
 use egui::ViewportBuilder;
-use crossbeam::channel::{Receiver, Sender, unbounded};
-use crate::view::UiApp;
 
 pub struct Runner {}
 
@@ -17,10 +17,8 @@ impl Runner {
     }
 
     pub fn start(&self) {
+        let (tx, _rx): (Sender<EditAction>, Receiver<EditAction>) = unbounded();
 
-        let (tx, rx):(Sender<EditAction>, Receiver<EditAction>) = unbounded();
-
-        
         let options = NativeOptions {
             viewport: ViewportBuilder::default()
                 .with_title("CaveTracker Synth Editor")
@@ -28,7 +26,7 @@ impl Runner {
             ..Default::default()
         };
 
-        eframe::run_native(
+        let _ = eframe::run_native(
             "Blank Black Window",
             options,
             Box::new(|_cc| Ok(Box::new(UiApp::new(tx.clone())))),
