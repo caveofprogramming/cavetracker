@@ -1,14 +1,14 @@
 use eframe::egui::{Color32, InputState, Key, RichText, Ui};
 
 use super::view::View;
-use crate::messaging::EditAction;
+use crate::messaging::Action;
 use crate::types::{NUM_STEPS_PER_PHRASE, ChainId, Note, PhraseId, Step};
 use crossbeam::channel::Sender;
 use crossbeam::channel::bounded;
 use std::borrow::Cow;
 
 pub struct Phrase {
-    tx: Sender<EditAction>,
+    tx: Sender<Action>,
 
     phrase_id: PhraseId,
 
@@ -77,9 +77,9 @@ impl Phrase {
     const BIG_CELL_INCREMENT: isize = 0x10;
     const EMPTY_CELL_DISPLAY: &str = "--";
 
-    pub fn new(tx: Sender<EditAction>, phrase_id: ChainId) -> Self {
+    pub fn new(tx: Sender<Action>, phrase_id: ChainId) -> Self {
         let (reply_tx, reply_rx) = bounded(1); // one-shot channel
-        tx.send(EditAction::GetPhraseData {
+        tx.send(Action::GetPhraseData {
             phrase_id,
             reply_to: reply_tx,
         })
@@ -160,7 +160,7 @@ impl Phrase {
         *cell = new_value;
 
         self.tx
-            .send(EditAction::SetPhraseStep {
+            .send(Action::SetPhraseStep {
                 phrase_id: self.phrase_id,
                 index: row as usize,
                 step: new_value,

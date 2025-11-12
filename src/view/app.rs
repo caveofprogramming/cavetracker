@@ -6,7 +6,7 @@ use eframe::{
     },
 };
 
-use crate::messaging::EditAction;
+use crate::messaging::Action;
 use crate::view::Chain;
 use crate::view::Phrase;
 use crate::view::Song;
@@ -23,7 +23,7 @@ enum ViewMode {
 }
 
 pub struct UiApp {
-    tx: Sender<EditAction>,
+    tx: Sender<Action>,
     font_loaded: bool,
     song_view: Rc<RefCell<dyn View>>,
     view: Rc<RefCell<dyn View>>,
@@ -52,7 +52,7 @@ fn load_custom_font(ctx: &Context) {
 }
 
 impl UiApp {
-    pub fn new(tx: Sender<EditAction>) -> Self {
+    pub fn new(tx: Sender<Action>) -> Self {
         let view = Rc::new(RefCell::new(Song::new(tx.clone())));
         Self {
             tx: tx.clone(),

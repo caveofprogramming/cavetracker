@@ -104,11 +104,6 @@ impl Song {
 
         // Update the pattern's track with the new chain ID
         self.patterns[pattern_index].tracks[track_index] = chain_id;
-
-        println!(
-            "Updated pattern {} track {} with chain {:?}",
-            pattern_id, track_id, chain_id
-        );
     }
 
     // Get data for a particular chain

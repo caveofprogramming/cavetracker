@@ -1,7 +1,7 @@
 use eframe::egui::{Color32, InputState, Key, RichText, Ui};
 
 use super::view::View;
-use crate::messaging::EditAction;
+use crate::messaging::Action;
 use crate::types::NUM_PHRASES_PER_CHAIN;
 use crate::types::{ChainId, PhraseId};
 use crossbeam::channel::Sender;
@@ -9,7 +9,7 @@ use crossbeam::channel::bounded;
 use std::borrow::Cow;
 
 pub struct Chain {
-    tx: Sender<EditAction>,
+    tx: Sender<Action>,
 
     chain_id: ChainId,
 
@@ -83,11 +83,11 @@ impl Chain {
     const BIG_CELL_INCREMENT: isize = 0x10;
     const EMPTY_CELL_DISPLAY: &str = "--";
 
-    pub fn new(tx: Sender<EditAction>, chain_id: ChainId) -> Self {
+    pub fn new(tx: Sender<Action>, chain_id: ChainId) -> Self {
 
         let (reply_tx, reply_rx) = bounded(1);
 
-        tx.send(EditAction::GetChainData {
+        tx.send(Action::GetChainData {
             chain_id,
             reply_to: reply_tx,
         })
@@ -163,7 +163,7 @@ impl Chain {
         *cell = new_value;
 
         self.tx
-            .send(EditAction::SetChainPhrase {
+            .send(Action::SetChainPhrase {
                 chain_id: self.chain_id,
                 index: row as usize,
                 phrase_id: new_value,

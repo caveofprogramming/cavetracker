@@ -1,7 +1,7 @@
 use eframe::egui::{Color32, InputState, Key, RichText, Ui};
 
 use super::view::View;
-use crate::messaging::EditAction;
+use crate::messaging::Action;
 use crate::types::ChainId;
 use crossbeam::channel::Sender;
 use std::borrow::Cow;
@@ -10,7 +10,7 @@ const ROWS: usize = 256;
 const COLS: usize = 8;
 
 pub struct Song {
-    tx: Sender<EditAction>,
+    tx: Sender<Action>,
     visible_rows: usize,
 
     // Selection state
@@ -89,7 +89,7 @@ impl Song {
     const BIG_CELL_INCREMENT: isize = 0x10;
     const EMPTY_CELL_DISPLAY: &str = "--";
 
-    pub fn new(tx: Sender<EditAction>) -> Self {
+    pub fn new(tx: Sender<Action>) -> Self {
         Self {
             tx,
             values: vec![vec![None; COLS]; ROWS],
@@ -175,7 +175,7 @@ impl Song {
         *cell = new_value;
 
         self.tx
-            .send(EditAction::SetPatternValue {
+            .send(Action::SetPatternValue {
                 pattern_id: row as u8,
                 track_id: col as u8,
                 chain_id: new_value,

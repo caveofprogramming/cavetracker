@@ -2,8 +2,9 @@ pub mod messaging;
 pub mod model;
 pub mod types;
 pub mod view;
+pub mod engine;
 
-use crate::messaging::{EditAction, UpdateEngine};
+use crate::messaging::{Action, UpdateEngine};
 use crate::model::Song;
 use crate::view::UiApp;
 use crossbeam::channel::{Receiver, Sender, unbounded};
@@ -11,6 +12,7 @@ use eframe::{NativeOptions, egui};
 use egui::ViewportBuilder;
 use std::sync::Mutex;
 use std::sync::Arc;
+use crate::engine::Engine;
 
 pub struct Runner {}
 
@@ -20,10 +22,10 @@ impl Runner {
     }
 
     pub fn start(&self) {
-        let (tx, rx): (Sender<EditAction>, Receiver<EditAction>) = unbounded();
+        let (tx, rx): (Sender<Action>, Receiver<Action>) = unbounded();
 
-        let update_engine = UpdateEngine::new(rx.clone(), Arc::new(Mutex::new(Song::new())));
-        update_engine.run();
+        let engine = Engine::new(tx.clone(), rx.clone());
+        engine.run();
 
         let options = NativeOptions {
             viewport: ViewportBuilder::default()

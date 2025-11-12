@@ -14,14 +14,14 @@ mod tests {
     use serial_test::serial;
 
     struct TestEnv {
-        tx: Sender<EditAction>,
-        rx: Receiver<EditAction>,
+        tx: Sender<Action>,
+        rx: Receiver<Action>,
     }
 
     impl TestEnv {
         fn new() -> Self {
             let song = Arc::new(Mutex::new(Song::new()));
-            let (tx, rx): (Sender<EditAction>, Receiver<EditAction>) = unbounded();
+            let (tx, rx): (Sender<Action>, Receiver<Action>) = unbounded();
             let update_engine = UpdateEngine::new(rx.clone(), song.clone());
             update_engine.run();
 
@@ -48,7 +48,7 @@ mod tests {
         let chain_id = 15;
         let track_id = 5;
 
-        let _ = tx.send(EditAction::SetPatternValue {
+        let _ = tx.send(Action::SetPatternValue {
             pattern_id,
             track_id,
             chain_id: Some(chain_id),
@@ -56,7 +56,7 @@ mod tests {
 
         let (reply_tx, reply_rx) = bounded(1);
 
-        tx.send(EditAction::GetPatternData { reply_to: reply_tx })
+        tx.send(Action::GetPatternData { reply_to: reply_tx })
             .unwrap();
 
         let pattern_data = reply_rx.recv().unwrap();
@@ -89,7 +89,7 @@ mod tests {
             let phrase_id = phrase_ids[i];
             let index = indices[i];
 
-            let _ = tx.send(EditAction::SetChainPhrase {
+            let _ = tx.send(Action::SetChainPhrase {
                 chain_id,
                 index: index,
                 phrase_id: phrase_id,
@@ -97,7 +97,7 @@ mod tests {
 
             let (reply_tx, reply_rx) = bounded(1);
 
-            tx.send(EditAction::GetChainData {
+            tx.send(Action::GetChainData {
                 chain_id,
                 reply_to: reply_tx,
             })
@@ -135,7 +135,7 @@ mod tests {
             let index = indices[i];
             let step = steps[i];
 
-            let _ = tx.send(EditAction::SetPhraseStep {
+            let _ = tx.send(Action::SetPhraseStep {
                 phrase_id,
                 index: index,
                 step,
@@ -149,7 +149,7 @@ mod tests {
 
             let (reply_tx, reply_rx) = bounded(1);
 
-            let _ = tx.send(EditAction::GetPhraseData {
+            let _ = tx.send(Action::GetPhraseData {
                 phrase_id,
                 reply_to: reply_tx,
             });
@@ -161,7 +161,7 @@ mod tests {
     }
 }
 
-pub enum EditAction {
+pub enum Action {
     /*
      * Get all pattern data in convenient form.
      */
@@ -207,12 +207,12 @@ pub enum EditAction {
 }
 
 pub struct UpdateEngine {
-    rx: Receiver<EditAction>,
+    rx: Receiver<Action>,
     song: Arc<Mutex<Song>>,
 }
 
 impl UpdateEngine {
-    pub fn new(rx: Receiver<EditAction>, song: Arc<Mutex<Song>>) -> Self {
+    pub fn new(rx: Receiver<Action>, song: Arc<Mutex<Song>>) -> Self {
         Self { rx, song }
     }
 
@@ -228,33 +228,33 @@ impl UpdateEngine {
                         Err(_) => continue,
                     };
                     match action {
-                        EditAction::GetPatternData { reply_to } => {
+                        Action::GetPatternData { reply_to } => {
                             let _ = reply_to.send(song_guard.get_pattern_data());
                         }
-                        EditAction::SetPatternValue {
+                        Action::SetPatternValue {
                             pattern_id,
                             track_id,
                             chain_id,
                         } => {
                             song_guard.update_pattern(pattern_id, track_id, chain_id);
                         }
-                        EditAction::GetChainData { chain_id, reply_to } => {
+                        Action::GetChainData { chain_id, reply_to } => {
                             let _ = reply_to.send(song_guard.get_chain_data(chain_id));
                         }
-                        EditAction::SetChainPhrase {
+                        Action::SetChainPhrase {
                             chain_id,
                             index,
                             phrase_id,
                         } => {
                             song_guard.set_chain_phrase(chain_id, index, phrase_id);
                         }
-                        EditAction::GetPhraseData {
+                        Action::GetPhraseData {
                             phrase_id,
                             reply_to,
                         } => {
                             let _ = reply_to.send(song_guard.get_phrase_data(phrase_id));
                         }
-                        EditAction::SetPhraseStep {
+                        Action::SetPhraseStep {
                             phrase_id,
                             index,
                             step,
