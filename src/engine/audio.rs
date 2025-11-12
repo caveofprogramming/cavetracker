@@ -1,17 +1,11 @@
-use crate::synth::AdsrTransform;
-use crate::synth::DelayTransform;
-use crate::synth::SineSource;
-use crate::synth::Source;
-use crate::synth::Synthesizer;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use std::cell::RefCell;
 use std::f32::consts::PI;
-use std::sync::Arc;
+use crate::engine::{Source, SineSource};
 
 pub struct Audio {
     device: cpal::Device,
     config: cpal::StreamConfig,
-    sample_rate: f32,
+    sample_rate: u64,
 }
 
 impl Audio {
@@ -21,7 +15,7 @@ impl Audio {
         let config = device
             .default_output_config()
             .expect("no default output config");
-        let sample_rate = config.sample_rate().0 as f32;
+        let sample_rate = config.sample_rate().0 as u64;
 
         Self {
             device,
@@ -30,36 +24,16 @@ impl Audio {
         }
     }
 
-    /// Play the tone for a few seconds.
     pub fn start(&self) {
-        let mut sine = SineSource::new(self.sample_rate,  0.01, 1.0, 0.0);
-        let mut synthesizer = Synthesizer::new(self.sample_rate);
-        synthesizer.add_transform(Box::new(AdsrTransform::new(
-            self.sample_rate,
-            0.01,
-            0.1,
-            0.4,
-            0.4,
-        )));
-        synthesizer.add_transform(Box::new(DelayTransform::new(self.sample_rate, 0.05, 0.5, 0.5)));
-        synthesizer.note_on();
-
-        let note_off_sample = (self.sample_rate * 1.0) as u64;
+        let mut sine = SineSource::new(self.sample_rate, 440.0);
 
         let stream = self
             .device
             .build_output_stream(
                 &self.config,
                 move |data: &mut [f32], _| {
-                    // Send note_off at exactly 1 second
-                    if synthesizer.get_sample() >= note_off_sample {
-                        synthesizer.note_off();
-                    }
-
                     for frame in data.chunks_mut(2) {
-                        let sample = synthesizer.next_sample();
-
-                        // Write to each channel
+                        let sample = sine.next_sample();
                         frame[0] = sample;
                         frame[1] = 0.2 * sample;
                     }

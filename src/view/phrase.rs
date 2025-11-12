@@ -2,7 +2,7 @@ use eframe::egui::{Color32, InputState, Key, RichText, Ui};
 
 use super::view::View;
 use crate::messaging::Action;
-use crate::types::{NUM_STEPS_PER_PHRASE, ChainId, Note, PhraseId, Step};
+use crate::types::{ChainId, NUM_STEPS_PER_PHRASE, Note, PhraseId, Step};
 use crossbeam::channel::Sender;
 use crossbeam::channel::bounded;
 use std::borrow::Cow;
@@ -118,14 +118,20 @@ impl Phrase {
                 if new < 0 {
                     None
                 } else {
-                    Some(Step {note: new.min(Self::MAX_CELL_VALUE as isize) as Note, len: 0 })
+                    Some(Step {
+                        note: new.min(Self::MAX_CELL_VALUE as isize) as Note,
+                        len: 0,
+                    })
                 }
             }
             None => {
                 if delta == 1 {
-                    return Some(Step{note: 0, len: 0});
+                    return Some(Step { note: 0, len: 0 });
                 } else if delta > 0 {
-                    Some(Step{ note: delta.min(Self::MAX_CELL_VALUE as isize) as Note, len: 0})
+                    Some(Step {
+                        note: delta.min(Self::MAX_CELL_VALUE as isize) as Note,
+                        len: 0,
+                    })
                 } else {
                     None
                 }
@@ -134,7 +140,6 @@ impl Phrase {
     }
 
     fn change_selection(&mut self, input: &egui::InputState) {
-
         // Figure out how much to increase or decrease
         // the note by.
         let delta = if input.key_pressed(Key::ArrowUp) {

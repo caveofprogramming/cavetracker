@@ -84,7 +84,6 @@ impl Chain {
     const EMPTY_CELL_DISPLAY: &str = "--";
 
     pub fn new(tx: Sender<Action>, chain_id: ChainId) -> Self {
-
         let (reply_tx, reply_rx) = bounded(1);
 
         tx.send(Action::GetChainData {

@@ -1,18 +1,15 @@
+pub mod engine;
 pub mod messaging;
 pub mod model;
 pub mod types;
 pub mod view;
-pub mod engine;
 
+use crate::engine::Engine;
 use crate::messaging::{Action, UpdateEngine};
-use crate::model::Song;
 use crate::view::UiApp;
 use crossbeam::channel::{Receiver, Sender, unbounded};
 use eframe::{NativeOptions, egui};
 use egui::ViewportBuilder;
-use std::sync::Mutex;
-use std::sync::Arc;
-use crate::engine::Engine;
 
 pub struct Runner {}
 

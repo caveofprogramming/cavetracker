@@ -81,10 +81,7 @@ impl UiApp {
                 ViewMode::Chain => {
                     if let Some(phrase_id) = selected_value {
                         self.mode = ViewMode::Phrase;
-                        self.view = Rc::new(RefCell::new(Phrase::new(
-                            self.tx.clone(),
-                            phrase_id,
-                        )));
+                        self.view = Rc::new(RefCell::new(Phrase::new(self.tx.clone(), phrase_id)));
                     }
                 }
                 ViewMode::Phrase => {
