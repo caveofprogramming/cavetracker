@@ -116,7 +116,7 @@ impl Song {
         self.chains
             .get(&chain_id)
             .map(|chain| chain.phrases.iter().cloned().collect())
-            .unwrap_or_else(Vec::new)
+            .unwrap_or_else(|| Chain::new().phrases.to_vec())
     }
 
     // Set a phrase in a chain
