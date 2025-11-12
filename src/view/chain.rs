@@ -84,7 +84,7 @@ impl Chain {
     const EMPTY_CELL_DISPLAY: &str = "--";
 
     pub fn new(tx: Sender<EditAction>, chain_id: ChainId) -> Self {
-        println!("New chain");
+
         let (reply_tx, reply_rx) = bounded(1);
 
         tx.send(EditAction::GetChainData {
@@ -92,10 +92,10 @@ impl Chain {
             reply_to: reply_tx,
         })
         .unwrap();
-        println!("Still going 1");
 
         let chain_data = reply_rx.recv().unwrap();
-        println!("Still going 2");
+
+        println!("chain_data size: {}", chain_data.len());
 
         Self {
             tx,
