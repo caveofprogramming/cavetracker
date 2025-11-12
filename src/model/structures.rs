@@ -142,7 +142,7 @@ impl Song {
         self.phrases
             .get(&phrase_id)
             .map(|phrase| phrase.steps.iter().cloned().collect())
-            .unwrap_or_else(Vec::new)
+            .unwrap_or_else(|| Phrase::new().steps.to_vec())
     }
 
     // Update a phrase or add a new phrase

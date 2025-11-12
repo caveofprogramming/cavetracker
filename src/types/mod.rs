@@ -16,8 +16,8 @@ pub const NUM_STEPS_PER_PHRASE: usize = 16;
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Step {
-    note: u8,
-    len: u8,
+    pub note: u8,
+    pub len: u8,
 }
 
 impl Step {

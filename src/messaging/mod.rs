@@ -239,7 +239,6 @@ impl UpdateEngine {
                             song_guard.update_pattern(pattern_id, track_id, chain_id);
                         }
                         EditAction::GetChainData { chain_id, reply_to } => {
-                            println!("GetChainData");
                             let _ = reply_to.send(song_guard.get_chain_data(chain_id));
                         }
                         EditAction::SetChainPhrase {
