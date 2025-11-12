@@ -3,11 +3,14 @@ pub mod model;
 pub mod types;
 pub mod view;
 
-use crate::messaging::EditAction;
+use crate::messaging::{EditAction, UpdateEngine};
+use crate::model::Song;
 use crate::view::UiApp;
 use crossbeam::channel::{Receiver, Sender, unbounded};
 use eframe::{NativeOptions, egui};
 use egui::ViewportBuilder;
+use std::sync::Mutex;
+use std::sync::Arc;
 
 pub struct Runner {}
 
@@ -17,7 +20,10 @@ impl Runner {
     }
 
     pub fn start(&self) {
-        let (tx, _rx): (Sender<EditAction>, Receiver<EditAction>) = unbounded();
+        let (tx, rx): (Sender<EditAction>, Receiver<EditAction>) = unbounded();
+
+        let update_engine = UpdateEngine::new(rx.clone(), Arc::new(Mutex::new(Song::new())));
+        update_engine.run();
 
         let options = NativeOptions {
             viewport: ViewportBuilder::default()

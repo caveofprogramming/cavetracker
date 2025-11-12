@@ -221,59 +221,51 @@ impl UpdateEngine {
         let song = self.song.clone();
 
         thread::spawn(move || {
-            while let Ok(action) = rx.recv() {
-                match action {
-                    EditAction::GetPatternData { reply_to } => {
-                        println!("Get pattern data");
-
-                        if let Ok(song_guard) = song.lock() {
-                            let pattern_data = song_guard.get_pattern_data();
-                            let _ = reply_to.send(pattern_data);
+            if let Err(e) = std::panic::catch_unwind(|| {
+                while let Ok(action) = rx.recv() {
+                    let mut song_guard = match song.lock() {
+                        Ok(guard) => guard,
+                        Err(_) => continue,
+                    };
+                    match action {
+                        EditAction::GetPatternData { reply_to } => {
+                            let _ = reply_to.send(song_guard.get_pattern_data());
                         }
-                    }
-                    EditAction::SetPatternValue {
-                        pattern_id,
-                        track_id,
-                        chain_id,
-                    } => {
-                        if let Ok(mut song_guard) = song.lock() {
+                        EditAction::SetPatternValue {
+                            pattern_id,
+                            track_id,
+                            chain_id,
+                        } => {
                             song_guard.update_pattern(pattern_id, track_id, chain_id);
                         }
-                    }
-                    EditAction::GetChainData { chain_id, reply_to } => {
-                        if let Ok(song_guard) = song.lock() {
-                            let chain_data = song_guard.get_chain_data(chain_id);
-                            let _ = reply_to.send(chain_data);
+                        EditAction::GetChainData { chain_id, reply_to } => {
+                            println!("GetChainData");
+                            let _ = reply_to.send(song_guard.get_chain_data(chain_id));
                         }
-                    }
-                    EditAction::SetChainPhrase {
-                        chain_id,
-                        index,
-                        phrase_id,
-                    } => {
-                        if let Ok(mut song_guard) = song.lock() {
+                        EditAction::SetChainPhrase {
+                            chain_id,
+                            index,
+                            phrase_id,
+                        } => {
                             song_guard.set_chain_phrase(chain_id, index, phrase_id);
                         }
-                    }
-                    EditAction::GetPhraseData {
-                        phrase_id,
-                        reply_to,
-                    } => {
-                        if let Ok(song_guard) = song.lock() {
-                            let phrase_data = song_guard.get_phrase_data(phrase_id);
-                            let _ = reply_to.send(phrase_data);
+                        EditAction::GetPhraseData {
+                            phrase_id,
+                            reply_to,
+                        } => {
+                            let _ = reply_to.send(song_guard.get_phrase_data(phrase_id));
                         }
-                    }
-                    EditAction::SetPhraseStep {
-                        phrase_id,
-                        index,
-                        step,
-                    } => {
-                        if let Ok(mut song_guard) = song.lock() {
+                        EditAction::SetPhraseStep {
+                            phrase_id,
+                            index,
+                            step,
+                        } => {
                             song_guard.set_phrase_step(phrase_id, index, step);
                         }
                     }
                 }
+            }) {
+                println!("Receiver thread panicked: {:?}", e);
             }
         });
     }

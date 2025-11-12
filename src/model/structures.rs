@@ -1,6 +1,6 @@
 use crate::types::{
-    ChainId, NUM_CHAINS_PER_PATTERN, NUM_PHRASES_PER_CHAIN, NUM_STEPS_PER_PHRASE, NUM_TRACKS,
-    PatternId, PhraseId, Step, TrackId,
+    ChainId, NUM_PHRASES_PER_CHAIN, NUM_STEPS_PER_PHRASE, NUM_TRACKS, PatternId, PhraseId, Step,
+    TrackId,
 };
 use std::collections::HashMap;
 
@@ -11,7 +11,7 @@ use std::collections::HashMap;
  */
 
 pub struct Pattern {
-    tracks: [Option<ChainId>; NUM_CHAINS_PER_PATTERN],
+    tracks: [Option<ChainId>; NUM_TRACKS],
 }
 
 /*

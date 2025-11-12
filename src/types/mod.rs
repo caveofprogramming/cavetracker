@@ -6,7 +6,6 @@ pub type NoteId = u8; // MIDI note number
 pub type Note = u8;
 
 pub const NUM_TRACKS: usize = 8;
-pub const NUM_CHAINS_PER_PATTERN: usize = 8;
 pub const NUM_PHRASES_PER_CHAIN: usize = 4;
 pub const NUM_STEPS_PER_PHRASE: usize = 16;
 

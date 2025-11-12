@@ -2,12 +2,11 @@ use eframe::egui::{Color32, InputState, Key, RichText, Ui};
 
 use super::view::View;
 use crate::messaging::EditAction;
+use crate::types::NUM_PHRASES_PER_CHAIN;
 use crate::types::{ChainId, PhraseId};
 use crossbeam::channel::Sender;
 use crossbeam::channel::bounded;
 use std::borrow::Cow;
-
-const ROWS: usize = 16;
 
 pub struct Chain {
     tx: Sender<EditAction>,
@@ -55,7 +54,7 @@ impl View for Chain {
                 ui.end_row();
 
                 // Body rows
-                for i in 0..16 {
+                for i in 0..NUM_PHRASES_PER_CHAIN {
                     ui.label(RichText::new(" ").color(Color32::YELLOW));
                     ui.label(RichText::new(format!("{:02X}", i)).color(Color32::GREEN));
 
@@ -85,14 +84,18 @@ impl Chain {
     const EMPTY_CELL_DISPLAY: &str = "--";
 
     pub fn new(tx: Sender<EditAction>, chain_id: ChainId) -> Self {
-        let (reply_tx, reply_rx) = bounded(1); // one-shot channel
+        println!("New chain");
+        let (reply_tx, reply_rx) = bounded(1);
+
         tx.send(EditAction::GetChainData {
             chain_id,
             reply_to: reply_tx,
         })
         .unwrap();
+        println!("Still going 1");
 
-        let chain_data = reply_rx.recv().unwrap(); // blocks until response
+        let chain_data = reply_rx.recv().unwrap();
+        println!("Still going 2");
 
         Self {
             tx,
@@ -104,7 +107,7 @@ impl Chain {
 
     fn move_selection(&mut self, input: &InputState) {
         if input.key_pressed(Key::ArrowDown) {
-            self.selected_row = (self.selected_row + 1).min(ROWS - 1);
+            self.selected_row = (self.selected_row + 1).min(NUM_PHRASES_PER_CHAIN - 1);
         }
         if input.key_pressed(Key::ArrowUp) {
             self.selected_row = self.selected_row.saturating_sub(1);

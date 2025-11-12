@@ -7,6 +7,7 @@ use eframe::{
 };
 
 use crate::messaging::EditAction;
+use crate::view::Chain;
 use crate::view::Song;
 use crate::view::View;
 use crossbeam::channel::Sender;
@@ -71,22 +72,21 @@ impl UiApp {
 
             match self.mode {
                 ViewMode::Song => {
-                    if let Some(_chain_id) = selected_value {
+                    if let Some(chain_id) = selected_value {
                         self.mode = ViewMode::Chain;
-                        self.view = Rc::new(RefCell::new(Song::new(self.tx.clone())));
+                        self.view = Rc::new(RefCell::new(Chain::new(self.tx.clone(), chain_id)));
                     }
                 }
                 ViewMode::Chain => {
                     /*
-                    if let Some(phrase_id) = selected_value {
-                        println!("Switching to Phrase view for Phrase ID {}", phrase_id);
+                    if let Some(chain_id) = selected_value {
                         self.mode = ViewMode::Phrase;
-                        self.view = Rc::new(RefCell::new(PhraseComponent::new(
+                        self.view = Rc::new(RefCell::new(Chain::new(
                             self.tx.clone(),
-                            phrase_id,
+                            chain_id,
                         )));
                     }
-                    */
+                        */
                 }
                 ViewMode::Phrase => {
                     self.view = self.song_view.clone();
