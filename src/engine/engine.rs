@@ -4,6 +4,8 @@ use crate::model::Song;
 use crossbeam::channel::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use crate::engine::Audio;
+use std::thread;
+use std::time::Duration;
 
 pub struct Engine {
     tx: Sender<Action>,
@@ -19,7 +21,16 @@ impl Engine {
         let update_engine = UpdateEngine::new(self.rx.clone(), Arc::new(Mutex::new(Song::new())));
         update_engine.run();
 
-        let audio_engine = Audio::new();
-        audio_engine.start();
+        thread::spawn(|| {
+            let mut audio_engine = Audio::new();
+            
+            loop {
+                audio_engine.start();
+                thread::sleep(Duration::from_millis(1000));
+                audio_engine.stop();
+                thread::sleep(Duration::from_millis(1000));
+            }
+
+        });
     }
 }

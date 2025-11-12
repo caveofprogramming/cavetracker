@@ -6,6 +6,7 @@ pub struct Audio {
     device: cpal::Device,
     config: cpal::StreamConfig,
     sample_rate: u64,
+    stream: Option<cpal::Stream>,
 }
 
 impl Audio {
@@ -21,10 +22,17 @@ impl Audio {
             device,
             config: config.into(),
             sample_rate,
+            stream: None,
         }
     }
 
-    pub fn start(&self) {
+    pub fn stop(&mut self) {
+        if let Some(stream) = self.stream.take() {
+            drop(stream);
+        }
+    }
+
+    pub fn start(&mut self) {
         let mut sine = SineSource::new(self.sample_rate, 440.0);
 
         let stream = self
@@ -44,6 +52,7 @@ impl Audio {
             .expect("failed to build output stream");
 
         stream.play().expect("failed to start stream");
-        std::thread::sleep(std::time::Duration::from_secs(2));
+        
+        self.stream = Some(stream);
     }
 }
