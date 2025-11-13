@@ -1,16 +1,19 @@
+use crate::engine::{SineSource, Source};
+use crate::messaging::Action;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use crossbeam::channel::Sender;
 use std::f32::consts::PI;
-use crate::engine::{Source, SineSource};
 
 pub struct Audio {
     device: cpal::Device,
     config: cpal::StreamConfig,
     sample_rate: u64,
     stream: Option<cpal::Stream>,
+    tx: Sender<Action>,
 }
 
 impl Audio {
-    pub fn new() -> Self {
+    pub fn new(tx: Sender<Action>) -> Self {
         let host = cpal::default_host();
         let device = host.default_output_device().expect("no output device");
         let config = device
@@ -23,6 +26,7 @@ impl Audio {
             config: config.into(),
             sample_rate,
             stream: None,
+            tx,
         }
     }
 
@@ -52,7 +56,7 @@ impl Audio {
             .expect("failed to build output stream");
 
         stream.play().expect("failed to start stream");
-        
+
         self.stream = Some(stream);
     }
 }

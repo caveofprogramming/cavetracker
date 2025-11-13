@@ -3,7 +3,7 @@ mod engine;
 mod sine;
 mod source;
 
-pub use engine::Engine;
-pub use source::Source;
 pub use audio::Audio;
+pub use engine::Engine;
 pub use sine::SineSource;
+pub use source::Source;
