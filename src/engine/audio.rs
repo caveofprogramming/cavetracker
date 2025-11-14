@@ -1,4 +1,4 @@
-use crate::engine::{SineSource, Source};
+use crate::engine::{SineSource, Source, Instrument};
 use crate::messaging::Action;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crossbeam::channel::Sender;
@@ -38,6 +38,8 @@ impl Audio {
 
     pub fn start(&mut self) {
         let mut sine = SineSource::new(self.sample_rate, 440.0);
+        let mut instrument = Instrument::new();
+        instrument.add_source(Box::new(sine));
 
         let stream = self
             .device
@@ -45,7 +47,7 @@ impl Audio {
                 &self.config,
                 move |data: &mut [f32], _| {
                     for frame in data.chunks_mut(2) {
-                        let sample = sine.next_sample();
+                        let sample = instrument.next_sample(0.0);
                         frame[0] = sample;
                         frame[1] = 0.2 * sample;
                     }

@@ -17,7 +17,7 @@ impl SineSource {
 }
 
 impl Source for SineSource {
-    fn next_sample(&mut self) -> f32 {
+    fn next_sample(&mut self, input: f32) -> f32 {
         let value = (2.0 * std::f32::consts::PI * self.phase).sin();
         self.phase = (self.phase + self.freq / (self.sample_rate as f32)) % 1.0;
         value
