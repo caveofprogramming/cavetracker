@@ -23,9 +23,9 @@ impl Instrument {
 
         for node_def in &patch.nodes {
             let id = match node_def {
-                NodeDef::Sine(def) => instrument.add_sine(),
-                NodeDef::Lfo(def) => instrument.add_lfo(),
-                NodeDef::Adsr(def) => instrument.add_adsr(),
+                NodeDef::Sine(_) => instrument.add_sine(),
+                NodeDef::Lfo(_) => instrument.add_lfo(),
+                NodeDef::Adsr(_) => instrument.add_adsr(),
             };
             node_ids.push(id);
         }
