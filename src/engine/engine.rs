@@ -1,5 +1,5 @@
 use crate::UpdateEngine;
-use crate::engine::Audio;
+use crate::engine::audio::Audio;
 use crate::messaging::Action;
 use crate::model::Song;
 use crossbeam::channel::{Receiver, Sender};

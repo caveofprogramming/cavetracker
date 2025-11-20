@@ -1,8 +1,9 @@
-use crate::engine::{SineSource, Source, Instrument};
-use crate::messaging::Action;
+
+
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crossbeam::channel::Sender;
-use std::f32::consts::PI;
+use crate::messaging::Action;
+use crate::engine::audio::*;
 
 pub struct Audio {
     device: cpal::Device,
@@ -37,9 +38,36 @@ impl Audio {
     }
 
     pub fn start(&mut self) {
-        let mut sine = SineSource::new(self.sample_rate, 440.0);
-        let mut instrument = Instrument::new();
-        instrument.add_source(Box::new(sine));
+        let sample_rate = self.sample_rate as f32;
+
+        let patch = Patch {
+            sample_rate: sample_rate,
+            nodes: vec![
+                NodeDef::Sine(SineDef {}),
+                /*NodeDef::Lfo(LfoDef {
+                    freq: 0.2,
+                    depth: 50.0,
+                    offset: 0.0,
+                    target_node: 0,
+                    target_param: param::FREQUENCY,
+                }),*/
+                NodeDef::Adsr(AdsrDef {
+                    attack: 0.01,
+                    decay: 0.4,
+                    sustain: 0.0,
+                    release: 1.0,
+                    target_node: 0,
+                    target_param: param::AMPLITUDE,
+                }),
+            ],
+            connections: vec![],
+        };
+
+        let mut synth = Synth::new(patch, 32);
+        // Play a C major chord
+        synth.note_on(60, 127); // C
+        synth.note_on(64, 127); // E
+        synth.note_on(67, 127); // G
 
         let stream = self
             .device
@@ -47,7 +75,7 @@ impl Audio {
                 &self.config,
                 move |data: &mut [f32], _| {
                     for frame in data.chunks_mut(2) {
-                        let sample = instrument.next_sample(0.0);
+                        let sample = synth.next_sample();
                         frame[0] = sample;
                         frame[1] = 0.2 * sample;
                     }
