@@ -1,4 +1,4 @@
-use crate::engine::audio::{self, Modulator, NodeId, ParamId, Source};
+use crate::engine::audio::{Modulator, NodeId, ParamId, Source};
 
 #[derive(Debug, Clone, PartialEq)]
 enum EnvelopeStage {

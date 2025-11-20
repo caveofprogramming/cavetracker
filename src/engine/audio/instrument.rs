@@ -59,7 +59,7 @@ impl Instrument {
             }
         }
 
-        for conn in &patch.connections {
+        for _conn in &patch.connections {
             // e.g. route output of node A into input of node B
             // instrument.connect(conn.from_node, conn.to_node);
         }
