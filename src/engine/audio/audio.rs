@@ -4,6 +4,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crossbeam::channel::Sender;
 use crate::messaging::Action;
 use crate::engine::audio::*;
+use crate::engine::Sequencer;
 
 pub struct Audio {
     device: cpal::Device,
