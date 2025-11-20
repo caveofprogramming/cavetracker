@@ -65,9 +65,10 @@ impl Audio {
 
         let mut synth = Synth::new(patch, 32);
         // Play a C major chord
-        synth.note_on(60, 127); // C
-        synth.note_on(64, 127); // E
-        synth.note_on(67, 127); // G
+        //synth.note_on(60, 127); // C
+        //synth.note_on(64, 127); // E
+        synth.note_on(70, 127); // G
+        synth.note_on(77, 127); // G
 
         let stream = self
             .device
