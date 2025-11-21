@@ -29,17 +29,21 @@ impl Engine {
         update_engine.run();
 
         thread::spawn(move || {
-            let running = false;
+            let mut running = false;
 
             let mut audio_engine = Audio::new(audio_tx.clone());
 
             while let Ok(action) = audio_rx.recv() {
                 match action {
                     Action::TogglePlayPhrase(phrase_id) => {
-                        if running {
+                        if !running {
+                            println!("Play phrase {}", phrase_id);
                             audio_engine.start();
+                            running = true;
                         } else {
+                            println!("Stop phrase {}", phrase_id);
                             audio_engine.stop();
+                            running = false;
                         }
                     }
                     _ => {}

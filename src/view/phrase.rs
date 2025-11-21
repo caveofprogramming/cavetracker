@@ -27,7 +27,6 @@ impl View for Phrase {
             self.tx
                 .send(Action::TogglePlayPhrase(self.phrase_id))
                 .unwrap();
-            println!("Play phrase {}", self.phrase_id);
         } else if shift_down {
             self.change_selection(input);
         } else {
