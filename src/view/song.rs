@@ -26,7 +26,9 @@ impl View for Song {
     fn handle_event(&mut self, input: &InputState) {
         let shift_down = input.modifiers.shift;
 
-        if shift_down {
+        if input.key_pressed(Key::Enter) {
+            println!("Enter");
+        } else if shift_down {
             self.change_selection(input);
         } else {
             self.move_selection(input);
@@ -107,18 +109,15 @@ impl Song {
             if self.selected_row >= self.min_row + self.visible_rows {
                 self.min_row = (self.min_row + 1).min(ROWS.saturating_sub(self.visible_rows));
             }
-        }
-        if input.key_pressed(Key::ArrowUp) {
+        } else if input.key_pressed(Key::ArrowUp) {
             self.selected_row = self.selected_row.saturating_sub(1);
 
             if self.selected_row < self.min_row {
                 self.min_row = self.min_row.saturating_sub(1);
             }
-        }
-        if input.key_pressed(Key::ArrowRight) {
+        } else if input.key_pressed(Key::ArrowRight) {
             self.selected_col = (self.selected_col + 1).min(COLS - 1);
-        }
-        if input.key_pressed(Key::ArrowLeft) {
+        } else if input.key_pressed(Key::ArrowLeft) {
             self.selected_col = self.selected_col.saturating_sub(1);
         }
     }

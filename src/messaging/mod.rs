@@ -161,7 +161,15 @@ mod tests {
     }
 }
 
+pub enum PlayTarget {
+    Pattern(u32), // ID of the pattern
+    Chain(u32),   // ID of the chain
+    Phrase(u32),  // ID of the phrase
+}
+
 pub enum Action {
+    TogglePlayPhrase(PhraseId),
+
     /*
      * Get all pattern data in convenient form.
      */
@@ -261,6 +269,7 @@ impl UpdateEngine {
                         } => {
                             song_guard.set_phrase_step(phrase_id, index, step);
                         }
+                        _ => {}
                     }
                 }
             }) {

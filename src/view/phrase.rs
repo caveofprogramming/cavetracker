@@ -23,7 +23,12 @@ impl View for Phrase {
     fn handle_event(&mut self, input: &InputState) {
         let shift_down = input.modifiers.shift;
 
-        if shift_down {
+        if input.key_pressed(Key::Space) {
+            self.tx
+                .send(Action::TogglePlayPhrase(self.phrase_id))
+                .unwrap();
+            println!("Play phrase {}", self.phrase_id);
+        } else if shift_down {
             self.change_selection(input);
         } else {
             self.move_selection(input);

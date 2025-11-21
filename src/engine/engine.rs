@@ -1,8 +1,9 @@
 use crate::UpdateEngine;
 use crate::engine::audio::Audio;
 use crate::messaging::Action;
+use crate::engine::Dispatcher;
 use crate::model::Song;
-use crossbeam::channel::{Receiver, Sender};
+use crossbeam::channel::{Receiver, Sender, unbounded};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -18,19 +19,31 @@ impl Engine {
     }
 
     pub fn run(&self) {
-        let update_engine = UpdateEngine::new(self.rx.clone(), Arc::new(Mutex::new(Song::new())));
+        let (update_tx, update_rx) = unbounded::<Action>();
+        let (audio_tx, audio_rx) = unbounded::<Action>();
+
+        // Dispatcher: main rx → update/audio
+        Dispatcher::new(self.rx.clone(), update_tx.clone(), audio_tx.clone()).run();
+
+        let update_engine = UpdateEngine::new(update_rx, Arc::new(Mutex::new(Song::new())));
         update_engine.run();
 
-        let tx = self.tx.clone();
-
         thread::spawn(move || {
-            let mut audio_engine = Audio::new(tx);
+            let running = false;
 
-            loop {
-                audio_engine.start();
-                thread::sleep(Duration::from_millis(1000));
-                audio_engine.stop();
-                thread::sleep(Duration::from_millis(1000));
+            let mut audio_engine = Audio::new(audio_tx.clone());
+
+            while let Ok(action) = audio_rx.recv() {
+                match action {
+                    Action::TogglePlayPhrase(phrase_id) => {
+                        if running {
+                            audio_engine.start();
+                        } else {
+                            audio_engine.stop();
+                        }
+                    }
+                    _ => {}
+                }
             }
         });
     }

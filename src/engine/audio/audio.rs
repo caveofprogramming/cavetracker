@@ -1,10 +1,8 @@
-
-
+use crate::engine::Sequencer;
+use crate::engine::audio::*;
+use crate::messaging::Action;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crossbeam::channel::Sender;
-use crate::messaging::Action;
-use crate::engine::audio::*;
-use crate::engine::Sequencer;
 
 pub struct Audio {
     device: cpal::Device,
@@ -45,13 +43,13 @@ impl Audio {
             sample_rate: sample_rate,
             nodes: vec![
                 NodeDef::Sine(SineDef {}),
-                /*NodeDef::Lfo(LfoDef {
+                NodeDef::Lfo(LfoDef {
                     freq: 0.2,
                     depth: 50.0,
                     offset: 0.0,
                     target_node: 0,
                     target_param: param::FREQUENCY,
-                }),*/
+                }),
                 NodeDef::Adsr(AdsrDef {
                     attack: 0.01,
                     decay: 0.4,

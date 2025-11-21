@@ -1,23 +1,15 @@
-use crate::types::PatternId;
 use crate::engine::audio::*;
-
+use crate::types::PatternId;
 
 pub struct Sequencer {
     bpm: f32,
-    sample_rate: f32,
-    samples_per_step: u64,
-    current_sample: u64,
-    current_pattern: PatternId,
-    phrase: Vec<Option<(u8, u8)>>, // note, velocity
+    sample_rate: u64,
 }
 
 impl Sequencer {
-    pub fn new(sample_rate: u64, bpm: f32) {
-
+    pub fn new(sample_rate: u64, bpm: f32) -> Self {
+        Self { sample_rate, bpm }
     }
 
-    pub fn tick(&self, synth: &mut Synth) {
-
-    }
+    pub fn tick(&self, synth: &mut Synth) {}
 }
-
