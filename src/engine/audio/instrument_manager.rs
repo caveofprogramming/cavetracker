@@ -45,4 +45,18 @@ impl InstrumentManager {
         let instrument = Instrument::from_patch(&patch);
         self.instruments.push(instrument);
     }
+
+    pub fn next(&mut self) -> f32 {
+        let mut mix = 0.0;
+        for instrument in &mut self.instruments {
+            mix += instrument.next();
+        }
+
+        let count = self.instruments.len();
+        if count != 0 {
+            mix /= count as f32;
+        }
+
+        mix
+    }
 }

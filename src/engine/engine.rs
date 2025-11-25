@@ -29,7 +29,7 @@ impl Engine {
         update_engine.run();
 
         let mut instrument_manager = InstrumentManager::new();
-        
+
         thread::spawn(move || {
             let mut audio_engine = Audio::new(audio_tx.clone());
             instrument_manager.set_sample_rate(audio_engine.get_sample_rate() as f32);
