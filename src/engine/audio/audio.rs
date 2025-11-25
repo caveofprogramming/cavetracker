@@ -3,6 +3,8 @@ use crate::engine::audio::*;
 use crate::messaging::Action;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crossbeam::channel::Sender;
+use parking_lot::Mutex;
+use std::sync::Arc;
 
 pub struct Audio {
     device: cpal::Device,
@@ -10,10 +12,11 @@ pub struct Audio {
     sample_rate: u64,
     stream: Option<cpal::Stream>,
     tx: Sender<Action>,
+    instrument_manager: Arc<Mutex<InstrumentManager>>,
 }
 
 impl Audio {
-    pub fn new(tx: Sender<Action>) -> Self {
+    pub fn new(instrument_manager: Arc<Mutex<InstrumentManager>>, tx: Sender<Action>) -> Self {
         let host = cpal::default_host();
         let device = host.default_output_device().expect("no output device");
         let config = device
@@ -27,6 +30,7 @@ impl Audio {
             sample_rate,
             stream: None,
             tx,
+            instrument_manager,
         }
     }
 
@@ -41,37 +45,10 @@ impl Audio {
     }
 
     pub fn start(&mut self) {
+        let instrument_manager = self.instrument_manager.clone();
         let sample_rate = self.sample_rate as f32;
 
-        let patch = Patch {
-            sample_rate: sample_rate,
-            nodes: vec![
-                NodeDef::Sine(SineDef {}),
-                NodeDef::Lfo(LfoDef {
-                    freq: 0.2,
-                    depth: 50.0,
-                    offset: 0.0,
-                    target_node: 0,
-                    target_param: param::FREQUENCY,
-                }),
-                NodeDef::Adsr(AdsrDef {
-                    attack: 0.01,
-                    decay: 0.4,
-                    sustain: 0.0,
-                    release: 1.0,
-                    target_node: 0,
-                    target_param: param::AMPLITUDE,
-                }),
-            ],
-            connections: vec![],
-        };
-
-        let mut synth = Synth::new(patch, 32);
-        // Play a C major chord
-        //synth.note_on(60, 127); // C
-        //synth.note_on(64, 127); // E
-        synth.note_on(70, 127); // G
-        synth.note_on(77, 127); // G
+        instrument_manager.lock().note_on();
 
         let stream = self
             .device
@@ -79,7 +56,7 @@ impl Audio {
                 &self.config,
                 move |data: &mut [f32], _| {
                     for frame in data.chunks_mut(2) {
-                        let sample = synth.next_sample();
+                        let sample = instrument_manager.lock().next();
                         frame[0] = sample;
                         frame[1] = 0.2 * sample;
                     }

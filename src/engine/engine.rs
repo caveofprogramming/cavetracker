@@ -29,11 +29,12 @@ impl Engine {
         let update_engine = UpdateEngine::new(update_rx, Arc::new(Mutex::new(Song::new())));
         update_engine.run();
 
-        let mut instrument_manager = InstrumentManager::new();
+        let instrument_manager = Arc::new(Mutex::new(InstrumentManager::new()));
 
         thread::spawn(move || {
-            let mut audio_engine = Audio::new(audio_tx.clone());
-            instrument_manager.set_sample_rate(audio_engine.get_sample_rate() as f32);
+            let mut audio_engine = Audio::new(instrument_manager.clone(), audio_tx.clone());
+            instrument_manager.lock().set_sample_rate(audio_engine.get_sample_rate() as f32);
+            instrument_manager.lock().add_synth();
 
             let mut running = false;
 
