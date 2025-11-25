@@ -12,3 +12,4 @@ crossbeam = "0.8"
 atomic_float = "1.0"
 serial_test = "3.0"
 downcast-rs = "1.2"
+parking_lot = { version = "0.12", features = ["send_guard"] }

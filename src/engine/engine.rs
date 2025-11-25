@@ -4,7 +4,8 @@ use crate::engine::audio::*;
 use crate::messaging::Action;
 use crate::model::Song;
 use crossbeam::channel::{Receiver, Sender, unbounded};
-use std::sync::{Arc, Mutex};
+use parking_lot::Mutex;
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 

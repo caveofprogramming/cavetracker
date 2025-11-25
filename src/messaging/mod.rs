@@ -1,6 +1,7 @@
 use crate::model::Song;
 use crossbeam::channel::{Receiver, Sender};
-use std::sync::{Arc, Mutex};
+use parking_lot::Mutex;
+use std::sync::Arc;
 use std::thread;
 
 use crate::types::{ChainId, PatternId, PhraseId, Step, TrackId};
@@ -229,51 +230,44 @@ impl UpdateEngine {
         let song = self.song.clone();
 
         thread::spawn(move || {
-            if let Err(e) = std::panic::catch_unwind(|| {
-                while let Ok(action) = rx.recv() {
-                    let mut song_guard = match song.lock() {
-                        Ok(guard) => guard,
-                        Err(_) => continue,
-                    };
-                    match action {
-                        Action::GetPatternData { reply_to } => {
-                            let _ = reply_to.send(song_guard.get_pattern_data());
-                        }
-                        Action::SetPatternValue {
-                            pattern_id,
-                            track_id,
-                            chain_id,
-                        } => {
-                            song_guard.update_pattern(pattern_id, track_id, chain_id);
-                        }
-                        Action::GetChainData { chain_id, reply_to } => {
-                            let _ = reply_to.send(song_guard.get_chain_data(chain_id));
-                        }
-                        Action::SetChainPhrase {
-                            chain_id,
-                            index,
-                            phrase_id,
-                        } => {
-                            song_guard.set_chain_phrase(chain_id, index, phrase_id);
-                        }
-                        Action::GetPhraseData {
-                            phrase_id,
-                            reply_to,
-                        } => {
-                            let _ = reply_to.send(song_guard.get_phrase_data(phrase_id));
-                        }
-                        Action::SetPhraseStep {
-                            phrase_id,
-                            index,
-                            step,
-                        } => {
-                            song_guard.set_phrase_step(phrase_id, index, step);
-                        }
-                        _ => {}
+            while let Ok(action) = rx.recv() {
+                let mut song_guard = song.lock();
+                match action {
+                    Action::GetPatternData { reply_to } => {
+                        let _ = reply_to.send(song_guard.get_pattern_data());
                     }
+                    Action::SetPatternValue {
+                        pattern_id,
+                        track_id,
+                        chain_id,
+                    } => {
+                        song_guard.update_pattern(pattern_id, track_id, chain_id);
+                    }
+                    Action::GetChainData { chain_id, reply_to } => {
+                        let _ = reply_to.send(song_guard.get_chain_data(chain_id));
+                    }
+                    Action::SetChainPhrase {
+                        chain_id,
+                        index,
+                        phrase_id,
+                    } => {
+                        song_guard.set_chain_phrase(chain_id, index, phrase_id);
+                    }
+                    Action::GetPhraseData {
+                        phrase_id,
+                        reply_to,
+                    } => {
+                        let _ = reply_to.send(song_guard.get_phrase_data(phrase_id));
+                    }
+                    Action::SetPhraseStep {
+                        phrase_id,
+                        index,
+                        step,
+                    } => {
+                        song_guard.set_phrase_step(phrase_id, index, step);
+                    }
+                    _ => {}
                 }
-            }) {
-                println!("Receiver thread panicked: {:?}", e);
             }
         });
     }
