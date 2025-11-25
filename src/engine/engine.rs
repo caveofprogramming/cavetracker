@@ -1,7 +1,7 @@
 use crate::UpdateEngine;
+use crate::engine::Dispatcher;
 use crate::engine::audio::Audio;
 use crate::messaging::Action;
-use crate::engine::Dispatcher;
 use crate::model::Song;
 use crossbeam::channel::{Receiver, Sender, unbounded};
 use std::sync::{Arc, Mutex};
