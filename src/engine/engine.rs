@@ -1,6 +1,6 @@
 use crate::UpdateEngine;
 use crate::engine::Dispatcher;
-use crate::engine::audio::Audio;
+use crate::engine::audio::*;
 use crate::messaging::Action;
 use crate::model::Song;
 use crossbeam::channel::{Receiver, Sender, unbounded};
@@ -28,10 +28,13 @@ impl Engine {
         let update_engine = UpdateEngine::new(update_rx, Arc::new(Mutex::new(Song::new())));
         update_engine.run();
 
+        let mut instrument_manager = InstrumentManager::new();
+        
         thread::spawn(move || {
-            let mut running = false;
-
             let mut audio_engine = Audio::new(audio_tx.clone());
+            instrument_manager.set_sample_rate(audio_engine.get_sample_rate() as f32);
+
+            let mut running = false;
 
             while let Ok(action) = audio_rx.recv() {
                 match action {

@@ -7,11 +7,15 @@ pub struct InstrumentManager {
 }
 
 impl InstrumentManager {
-    pub fn new(sample_rate: f32) -> Self {
+    pub fn new() -> Self {
         Self {
-            sample_rate,
+            sample_rate: 44100.00,
             instruments: vec![],
         }
+    }
+
+    pub fn set_sample_rate(&mut self, sample_rate: f32) {
+        self.sample_rate = sample_rate;
     }
 
     pub fn add_synth(&mut self) {

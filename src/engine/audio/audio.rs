@@ -30,6 +30,10 @@ impl Audio {
         }
     }
 
+    pub fn get_sample_rate(&self) -> u64 {
+        self.sample_rate
+    }
+
     pub fn stop(&mut self) {
         if let Some(stream) = self.stream.take() {
             drop(stream);
