@@ -26,28 +26,25 @@ impl Dispatcher {
         }
     }
 
-    pub fn run(&mut self) {
-        /*
+    pub fn run(&self) {
+
+        let sequencer_tx = self.sequencer_tx.clone();
+        let audio_tx = self.audio_tx.clone();
+        let update_tx = self.update_tx.clone();
+        let rx = self.rx.clone();
+
         thread::spawn(move || {
-            while let Ok(action) = self.rx.recv() {
+            while let Ok(action) = rx.recv() {
                 match &action {
                     Action::PlayPhrase(_) => {
-                        if self.is_playing {
-                            self.sequencer_tx.send(Action::StopAudio).unwrap();
-                            self.audio_tx.send(Action::StopAudio).unwrap();
-                            self.is_playing = false;
-                        } else {
-                            self.sequencer_tx.send(action).unwrap();
-                            self.audio_tx.send(Action::PlayAudio).unwrap();
-                            self.is_playing = true;
-                        }
+                        sequencer_tx.send(action.clone()).unwrap();
+                        audio_tx.send(action.clone()).unwrap();
                     }
                     _ => {
-                        self.update_tx.send(action).unwrap();
+                        update_tx.send(action.clone()).unwrap();
                     }
                 }
             }
         });
-        */
     }
 }

@@ -63,8 +63,8 @@ impl Audio {
         let sequencer = self.sequencer.clone();
         let sample_rate = self.sample_rate as f32;
 
-        let is_playing = Arc::clone(&self.is_playing);  
-        let is_playing_error = Arc::clone(&self.is_playing); 
+        let is_playing = Arc::clone(&self.is_playing);
+        let is_playing_error = Arc::clone(&self.is_playing);
 
         instrument_manager.lock().note_on();
 
@@ -82,7 +82,7 @@ impl Audio {
                     }
                 },
                 move |err| {
-                is_playing_error.store(false, Ordering::Release);
+                    is_playing_error.store(false, Ordering::Release);
                     eprintln!("audio error: {err}");
                 },
                 None,

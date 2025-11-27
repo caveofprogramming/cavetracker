@@ -168,6 +168,7 @@ pub enum PlayTarget {
     Phrase(u32),  // ID of the phrase
 }
 
+#[derive(Clone)]
 pub enum Action {
     PlayAudio,
     StopAudio,

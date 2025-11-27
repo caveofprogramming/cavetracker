@@ -56,6 +56,7 @@ impl Engine {
                 instrument_manager.clone(),
                 sequencer.clone(),
             );
+
             instrument_manager
                 .lock()
                 .set_sample_rate(audio_engine.get_sample_rate() as f32);
@@ -64,12 +65,13 @@ impl Engine {
             while let Ok(action) = audio_rx.recv() {
                 match action {
                     Action::PlayPhrase(phrase_id) => {
-                        println!("Play phrase {}", phrase_id);
-                        audio_engine.start();
-                    }
-                    Action::StopAudio => {
-                        println!("Stop play");
-                        audio_engine.stop();
+                        if audio_engine.is_playing() {
+                            println!("stop");
+                            audio_engine.stop();
+                        } else {
+                            println!("start");
+                            audio_engine.start();
+                        }
                     }
 
                     _ => {}
