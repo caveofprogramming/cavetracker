@@ -1,5 +1,6 @@
 use crate::UpdateEngine;
 use crate::engine::Dispatcher;
+use crate::engine::Sequencer;
 use crate::engine::audio::*;
 use crate::messaging::Action;
 use crate::model::Song;
@@ -22,9 +23,27 @@ impl Engine {
     pub fn run(&self) {
         let (update_tx, update_rx) = unbounded::<Action>();
         let (audio_tx, audio_rx) = unbounded::<Action>();
+        let (sequencer_tx, sequencer_rx) = unbounded::<Action>();
 
-        // Dispatcher: main rx → update/audio
-        Dispatcher::new(self.rx.clone(), update_tx.clone(), audio_tx.clone()).run();
+        /*
+         * InstrumentManager supplies the actual samples
+         */
+
+        // Dispatcher: main rx → update/audio/sequencer
+        let mut dispatcher = Dispatcher::new(
+            self.rx.clone(),
+            update_tx.clone(),
+            sequencer_tx.clone(),
+            audio_tx.clone(),
+        );
+        dispatcher.run();
+
+        let sequencer = Arc::new(Mutex::new(Sequencer::new(
+            self.tx.clone(),
+            sequencer_rx,
+            44100,
+            120.0,
+        )));
 
         let update_engine = UpdateEngine::new(update_rx, Arc::new(Mutex::new(Song::new())));
         update_engine.run();
@@ -32,25 +51,27 @@ impl Engine {
         let instrument_manager = Arc::new(Mutex::new(InstrumentManager::new()));
 
         thread::spawn(move || {
-            let mut audio_engine = Audio::new(instrument_manager.clone(), audio_tx.clone());
-            instrument_manager.lock().set_sample_rate(audio_engine.get_sample_rate() as f32);
+            let mut audio_engine = Audio::new(
+                audio_tx.clone(),
+                instrument_manager.clone(),
+                sequencer.clone(),
+            );
+            instrument_manager
+                .lock()
+                .set_sample_rate(audio_engine.get_sample_rate() as f32);
             instrument_manager.lock().add_synth();
-
-            let mut running = false;
 
             while let Ok(action) = audio_rx.recv() {
                 match action {
-                    Action::TogglePlayPhrase(phrase_id) => {
-                        if !running {
-                            println!("Play phrase {}", phrase_id);
-                            audio_engine.start();
-                            running = true;
-                        } else {
-                            println!("Stop phrase {}", phrase_id);
-                            audio_engine.stop();
-                            running = false;
-                        }
+                    Action::PlayPhrase(phrase_id) => {
+                        println!("Play phrase {}", phrase_id);
+                        audio_engine.start();
                     }
+                    Action::StopAudio => {
+                        println!("Stop play");
+                        audio_engine.stop();
+                    }
+
                     _ => {}
                 }
             }

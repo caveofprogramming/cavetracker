@@ -169,7 +169,9 @@ pub enum PlayTarget {
 }
 
 pub enum Action {
-    TogglePlayPhrase(PhraseId),
+    PlayAudio,
+    StopAudio,
+    PlayPhrase(PhraseId),
 
     /*
      * Get all pattern data in convenient form.

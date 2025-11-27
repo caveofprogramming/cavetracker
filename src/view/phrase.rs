@@ -24,9 +24,7 @@ impl View for Phrase {
         let shift_down = input.modifiers.shift;
 
         if input.key_pressed(Key::Space) {
-            self.tx
-                .send(Action::TogglePlayPhrase(self.phrase_id))
-                .unwrap();
+            self.tx.send(Action::PlayPhrase(self.phrase_id)).unwrap();
         } else if shift_down {
             self.change_selection(input);
         } else {

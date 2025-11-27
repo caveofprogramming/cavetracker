@@ -19,7 +19,7 @@ impl InstrumentManager {
     }
 
     pub fn note_on(&mut self) {
-        for instrument in &mut  self.instruments {
+        for instrument in &mut self.instruments {
             instrument.note_on(70, 127);
         }
     }
@@ -53,17 +53,16 @@ impl InstrumentManager {
     }
 
     pub fn next(&mut self) -> f32 {
-
         let mut mix = 0.0;
         for instrument in &mut self.instruments {
             mix += instrument.next();
         }
-        
+
         let count = self.instruments.len();
         if count != 0 {
             mix /= count as f32;
         }
- 
+
         mix
     }
 }
