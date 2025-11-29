@@ -27,7 +27,6 @@ impl Dispatcher {
     }
 
     pub fn run(&self) {
-
         let sequencer_tx = self.sequencer_tx.clone();
         let audio_tx = self.audio_tx.clone();
         let update_tx = self.update_tx.clone();

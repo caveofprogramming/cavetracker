@@ -30,7 +30,7 @@ impl Engine {
          */
 
         // Dispatcher: main rx → update/audio/sequencer
-        let mut dispatcher = Dispatcher::new(
+        let dispatcher = Dispatcher::new(
             self.rx.clone(),
             update_tx.clone(),
             sequencer_tx.clone(),
@@ -38,12 +38,7 @@ impl Engine {
         );
         dispatcher.run();
 
-        let sequencer = Sequencer::new(
-            self.tx.clone(),
-            sequencer_rx,
-            44100,
-            120.0,
-        );
+        let sequencer = Sequencer::new(self.tx.clone(), sequencer_rx, 44100, 120.0);
         sequencer.run();
 
         let sequencer = Arc::new(Mutex::new(sequencer));
@@ -60,10 +55,11 @@ impl Engine {
                 sequencer.clone(),
             );
 
-            instrument_manager
-                .lock()
-                .set_sample_rate(audio_engine.get_sample_rate() as f32);
-            instrument_manager.lock().add_synth();
+            {
+                let mut manager_lock = instrument_manager.lock();
+                manager_lock.set_sample_rate(audio_engine.get_sample_rate() as f32);
+                manager_lock.add_synth();
+            }
 
             while let Ok(action) = audio_rx.recv() {
                 match action {

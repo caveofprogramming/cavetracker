@@ -22,9 +22,7 @@ impl Sequencer {
         }
     }
 
-    pub fn run(&self) {
-
-    }
+    pub fn run(&self) {}
 
     pub fn tick(&self) {}
 }
