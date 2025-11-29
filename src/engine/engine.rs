@@ -38,12 +38,15 @@ impl Engine {
         );
         dispatcher.run();
 
-        let sequencer = Arc::new(Mutex::new(Sequencer::new(
+        let sequencer = Sequencer::new(
             self.tx.clone(),
             sequencer_rx,
             44100,
             120.0,
-        )));
+        );
+        sequencer.run();
+
+        let sequencer = Arc::new(Mutex::new(sequencer));
 
         let update_engine = UpdateEngine::new(update_rx, Arc::new(Mutex::new(Song::new())));
         update_engine.run();
