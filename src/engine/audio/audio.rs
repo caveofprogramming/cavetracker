@@ -6,6 +6,7 @@ use crossbeam::channel::Sender;
 use parking_lot::Mutex;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::ops::DerefMut;
 
 pub struct Audio {
     device: cpal::Device,
@@ -75,7 +76,7 @@ impl Audio {
                 move |data: &mut [f32], _| {
                     for frame in data.chunks_mut(2) {
                         is_playing.store(true, Ordering::Release);
-                        sequencer.lock().tick();
+                        sequencer.lock().deref_mut().tick();
                         let sample = instrument_manager.lock().next();
                         frame[0] = sample;
                         frame[1] = 0.2 * sample;
